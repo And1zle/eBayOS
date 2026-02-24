@@ -17,6 +17,8 @@ import { VisionUplinkPage } from './components/VisionUplinkPage';
 import { InventoryPage } from './components/InventoryPage';
 import { MessagesPage } from './components/MessagesPage';
 import { AnalyticsPage } from './components/AnalyticsPage';
+import { WatchlistHeatmap } from './components/WatchlistHeatmap';
+import { QuickActions } from './components/QuickActions';
 import { parseCommand } from './services/intentParser';
 import { executeSpell } from './services/spellExecutor';
 import { ParsedCommand, LogEntry, Intent } from './types';
@@ -224,6 +226,12 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SmartSuggestions onApply={handleCommandSubmit} />
                 <MarketPulse />
+              </div>
+
+              {/* Action Layer */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <WatchlistHeatmap />
+                <QuickActions onApply={handleCommandSubmit} />
               </div>
 
               <AuditLog logs={logs} />
