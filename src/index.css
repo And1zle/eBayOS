@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  @apply font-sans text-slate-200 bg-[#0B0E14] antialiased overflow-hidden;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 25%);
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  @apply bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-xl;
+}
+
+.glass-input {
+  @apply bg-slate-950/50 border border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all;
+}
+
+.glow-text {
+  text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+}
+
+.glow-border {
+  box-shadow: 0 0 20px -5px rgba(56, 189, 248, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-800 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-700;
+}

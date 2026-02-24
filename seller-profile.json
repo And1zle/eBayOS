@@ -1,0 +1,18 @@
+{
+  "voice": "direct, honest, no marketing fluff — let the item speak for itself",
+  "location": "Belen, New Mexico — mention for oversized or heavy items",
+  "pricing": { 
+    "philosophy": "price 10% below median sold comps to move inventory fast", 
+    "minimumPrice": 8.00 
+  },
+  "titles": { 
+    "pattern": "Brand + Model + Key Feature + Condition hint", 
+    "avoid": ["lot","as-is"], 
+    "prefer": ["vintage","working","tested"] 
+  },
+  "condition": { 
+    "bias": "default to Used - Good (3000)", 
+    "defaultCode": "3000" 
+  },
+  "strongCategories": ["vintage electronics", "hand tools", "collectibles", "household"]
+}

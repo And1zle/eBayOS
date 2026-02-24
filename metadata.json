@@ -1,0 +1,5 @@
+{
+  "name": "eBay Command Plane",
+  "description": "A natural language commerce control plane for eBay sellers. Translates natural language commands into structured, validated API actions.",
+  "requestFramePermissions": []
+}

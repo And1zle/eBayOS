@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  ebayos:
+    container_name: ebayos
+    build: .
+    image: ebayos:latest
+    restart: unless-stopped
+    ports:
+      - "4873:4873"
+    environment:
+      - NODE_ENV=production
+      - PORT=4873
+      # Points to the eBay listing assistant backend on the shared Docker network
+      - BACKEND_URL=http://ebay-listing-assistant:5000
+      # Gemini key for NL command parsing (intent parser runs client-side via Vite inject)
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    networks:
+      - ebayos_net
+      # Join the existing backend network so we can reach ebay-listing-assistant by name
+      - ebay_backend
+
+networks:
+  ebayos_net:
+    driver: bridge
+  ebay_backend:
+    external: true
+    name: ebay-listing-assistant_default
