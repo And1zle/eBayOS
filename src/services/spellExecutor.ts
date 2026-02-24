@@ -3,12 +3,12 @@
  * Maps parsed command intents → real backend API calls.
  * Called from App.tsx when the user confirms a command in ExecutionPanel.
  */
-import { ParsedCommand, Intent } from '../types';
+import { ParsedCommand, Intent, ItemLog } from '../types';
 
 export interface SpellResult {
   success: boolean;
   message: string;
-  data?: any;
+  data?: { itemLogs?: ItemLog[] };
 }
 
 // Helper: fetch all active listings
@@ -55,6 +55,7 @@ export async function executeSpell(command: ParsedCommand): Promise<SpellResult>
       if (!success) return { success: false, message: `Could not fetch listings: ${error}` };
 
       let adjusted = 0, failed = 0;
+      const itemLogs: ItemLog[] = [];
       for (const item of items) {
         const cur = parseFloat(item.price) || 0;
         const next = Math.max(0.99, parseFloat(
@@ -63,11 +64,18 @@ export async function executeSpell(command: ParsedCommand): Promise<SpellResult>
             : (cur + f.adjustment_value).toFixed(2)
         ));
         const r = await applyPrice(item.itemId, next);
-        r.success ? adjusted++ : failed++;
+        if (r.success) {
+          adjusted++;
+          itemLogs.push({ itemId: item.itemId, title: item.title || item.itemId, oldPrice: cur, newPrice: next, success: true });
+        } else {
+          failed++;
+          itemLogs.push({ itemId: item.itemId, title: item.title || item.itemId, oldPrice: cur, newPrice: next, success: false, error: r.error || 'Unknown error' });
+        }
       }
       return {
         success: adjusted > 0,
         message: `✅ Adjusted ${adjusted}/${items.length} listings.${failed ? ` ${failed} failed.` : ''}`,
+        data: { itemLogs },
       };
     }
 

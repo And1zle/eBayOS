@@ -102,6 +102,15 @@ export interface ParsedCommand {
   fields: IntentFields;
 }
 
+export interface ItemLog {
+  itemId: string;
+  title: string;
+  oldPrice: number;
+  newPrice: number;
+  success: boolean;
+  error?: string;
+}
+
 export interface LogEntry {
   id: string;
   timestamp: string;
@@ -110,6 +119,7 @@ export interface LogEntry {
   confidence: number;
   status: "success" | "pending" | "failed" | "requires_confirmation";
   details: string;
+  itemLogs?: ItemLog[];
 }
 
 // ─── Messages ────────────────────────────────────────────────────────────────

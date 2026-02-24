@@ -323,9 +323,16 @@ export function MarketPulse() {
 
       {/* Panel Content */}
       {loading ? (
-        <div className="flex items-center gap-2 text-slate-400 text-sm py-6 justify-center">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Loading listings…
+        <div className="space-y-4 p-2 animate-pulse">
+          <div className="grid grid-cols-3 gap-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="p-4 rounded-lg bg-white/5 border border-white/5">
+                <div className="h-3 w-16 bg-white/8 rounded mb-2" />
+                <div className="h-7 w-20 bg-white/10 rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="h-48 bg-white/5 rounded-lg border border-white/5" />
         </div>
       ) : (
         <>

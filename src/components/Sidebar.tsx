@@ -9,9 +9,10 @@ interface SidebarProps {
   className?: string;
   currentView: AppView;
   onViewChange: (view: AppView) => void;
+  badges?: Record<string, number>;
 }
 
-export function Sidebar({ className, currentView, onViewChange }: SidebarProps) {
+export function Sidebar({ className, currentView, onViewChange, badges = {} }: SidebarProps) {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', id: 'control-plane' as const },
     { icon: ScanEye, label: 'Vision Uplink', id: 'vision-uplink' as const },
@@ -50,6 +51,11 @@ export function Sidebar({ className, currentView, onViewChange }: SidebarProps) 
             )}
             <item.icon className={cn("w-5 h-5 transition-colors", currentView === item.id ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
             {item.label}
+            {badges[item.id] && badges[item.id] > 0 && (
+              <span className="ml-auto flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse">
+                {badges[item.id]}
+              </span>
+            )}
           </button>
         ))}
       </div>

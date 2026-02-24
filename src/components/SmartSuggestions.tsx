@@ -132,12 +132,21 @@ export function SmartSuggestions({ onApply }: SmartSuggestionsProps) {
       </div>
 
       {loading && (
-        <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Analyzing listings...
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="p-4 rounded-lg bg-white/5 border border-white/5 animate-pulse">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-4 w-16 bg-white/10 rounded" />
+                <div className="h-3 w-24 bg-white/5 rounded ml-auto" />
+              </div>
+              <div className="h-4 w-3/4 bg-white/8 rounded mb-2" />
+              <div className="h-3 w-full bg-white/5 rounded mb-1" />
+              <div className="h-3 w-2/3 bg-white/5 rounded mb-3" />
+              <div className="h-3 w-40 bg-blue-500/10 rounded" />
+            </div>
+          ))}
         </div>
       )}
-
 
       <div className="space-y-4">
         {suggestions.map((suggestion) => (

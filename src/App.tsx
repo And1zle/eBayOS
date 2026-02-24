@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { RightSidebar } from './components/RightSidebar';
 import { CommandBar } from './components/CommandBar';
@@ -21,7 +21,7 @@ import { parseCommand } from './services/intentParser';
 import { executeSpell } from './services/spellExecutor';
 import { ParsedCommand, LogEntry, Intent } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, DollarSign, Package, MessageSquare as MsgIcon, ShoppingCart } from 'lucide-react';
 
 type View = 'control-plane' | 'spellbook' | 'audit-log' | 'preferences' | 'vision-uplink' | 'inventory' | 'orders' | 'messages' | 'analytics';
 
@@ -32,6 +32,32 @@ export default function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [inputHistory, setInputHistory] = useState<string>("");
   const [prefillCommand, setPrefillCommand] = useState<string>("");
+
+  // Quick-stats state
+  const [quickStats, setQuickStats] = useState({ totalValue: 0, activeListings: 0, unansweredMessages: 0, pendingOrders: 0 });
+  const [badges, setBadges] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    // Fetch listing stats
+    fetch('/api/active-listings')
+      .then(r => r.json())
+      .then(d => {
+        const items = d.items || [];
+        const totalValue = items.reduce((s: number, i: any) => s + (parseFloat(i.price) || 0), 0);
+        setQuickStats(prev => ({ ...prev, totalValue, activeListings: items.length }));
+      })
+      .catch(() => {});
+    // Fetch message stats
+    fetch('/api/messages')
+      .then(r => r.json())
+      .then(d => {
+        const msgs = d.messages || d || [];
+        const unanswered = Array.isArray(msgs) ? msgs.filter((m: any) => m.status === 'unanswered').length : 0;
+        setQuickStats(prev => ({ ...prev, unansweredMessages: unanswered }));
+        if (unanswered > 0) setBadges(prev => ({ ...prev, messages: unanswered }));
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCommandSubmit = async (input: string) => {
     setCurrentView('control-plane');
@@ -54,11 +80,13 @@ export default function App() {
 
     let status: LogEntry['status'] = 'success';
     let details = '';
+    let itemLogs: LogEntry['itemLogs'] = undefined;
 
     try {
       const result = await executeSpell(currentCommand);
       status = result.success ? 'success' : 'failed';
       details = result.message;
+      if (result.data?.itemLogs) itemLogs = result.data.itemLogs;
     } catch (err: any) {
       status = 'failed';
       details = `Execution error: ${err.message}`;
@@ -72,6 +100,7 @@ export default function App() {
       confidence: currentCommand.confidence,
       status,
       details,
+      itemLogs,
     };
 
     setLogs(prev => [newLog, ...prev]);
@@ -110,6 +139,7 @@ export default function App() {
       <Sidebar
         currentView={currentView}
         onViewChange={(v) => setCurrentView(v as View)}
+        badges={badges}
         className="z-20 relative"
       />
 
@@ -148,6 +178,28 @@ export default function App() {
                 <span>v2.4.0-beta</span>
                 <span className="text-slate-600">•</span>
                 <span className="text-emerald-400 text-xs">Backend connected → 100.67.134.63:5000</span>
+              </div>
+
+              {/* Quick Stats Row */}
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { label: 'Total Listed Value', value: `$${quickStats.totalValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+                  { label: 'Active Listings', value: quickStats.activeListings.toString(), icon: Package, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+                  { label: 'Unanswered Messages', value: quickStats.unansweredMessages.toString(), icon: MsgIcon, color: quickStats.unansweredMessages > 0 ? 'text-amber-400' : 'text-slate-400', bg: quickStats.unansweredMessages > 0 ? 'bg-amber-500/10' : 'bg-white/5', border: quickStats.unansweredMessages > 0 ? 'border-amber-500/20' : 'border-white/5' },
+                  { label: 'Pending Orders', value: quickStats.pendingOrders.toString(), icon: ShoppingCart, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
+                ].map((stat) => (
+                  <div key={stat.label} className={cn('glass-panel rounded-xl p-4 border', stat.border)}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn('p-2 rounded-lg', stat.bg)}>
+                        <stat.icon className={cn('w-4 h-4', stat.color)} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                        <p className={cn('text-xl font-bold', stat.color)}>{stat.value}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <CommandBar
