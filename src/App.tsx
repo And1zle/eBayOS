@@ -22,6 +22,7 @@ import { executeSpell } from './services/spellExecutor';
 import { ParsedCommand, LogEntry, Intent } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Bell, DollarSign, Package, MessageSquare as MsgIcon, ShoppingCart } from 'lucide-react';
+import { cn } from './lib/utils';
 
 type View = 'control-plane' | 'spellbook' | 'audit-log' | 'preferences' | 'vision-uplink' | 'inventory' | 'orders' | 'messages' | 'analytics';
 
