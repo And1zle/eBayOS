@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, ChevronRight, ChevronDown, Zap, RefreshCw, Mail, Tag, DollarSign, XCircle, Copy, Send, Settings, Trash2 } from 'lucide-react';
+import { Terminal, ChevronRight, ChevronDown, Zap, RefreshCw, Mail, Tag, DollarSign, XCircle, Copy, Send, Settings, Trash2, MessageSquare, BarChart3, FileText } from 'lucide-react';
 import { Intent } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +56,23 @@ const CATEGORIES: { id: string; label: string; accent: string; commands: Command
       { intent: Intent.UPDATE_FULFILLMENT_SETTINGS, label: 'UPDATE_FULFILLMENT', icon: Settings, color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', example: 'Set vacation mode on with auto-reply: Away until March 1st, orders ship on return' },
     ],
   },
+  {
+    id: 'messages',
+    label: 'Messages',
+    accent: 'text-pink-400',
+    commands: [
+      { intent: Intent.RESPOND_TO_BUYER, label: 'RESPOND_TO_BUYER', icon: MessageSquare, color: 'text-pink-400', bg: 'bg-pink-400/10', border: 'border-pink-400/20', example: 'Reply to buyer: I can do $42 with combined shipping, deal!' },
+    ],
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    accent: 'text-violet-400',
+    commands: [
+      { intent: Intent.UNKNOWN, label: 'ANALYZE_PERFORMANCE', icon: BarChart3, color: 'text-violet-400', bg: 'bg-violet-400/10', border: 'border-violet-400/20', example: 'Show me my top performing listings by watchers' },
+      { intent: Intent.UNKNOWN, label: 'EXPORT_REPORT', icon: FileText, color: 'text-violet-400', bg: 'bg-violet-400/10', border: 'border-violet-400/20', example: 'Export analytics report for my current inventory' },
+    ],
+  },
 ];
 
 export function RightSidebar({ onSelectExample }: RightSidebarProps) {
@@ -70,7 +87,7 @@ export function RightSidebar({ onSelectExample }: RightSidebarProps) {
           <Terminal className="w-4 h-4 text-blue-400" />
           Command Library
         </h2>
-        <span className="text-[9px] font-mono text-slate-600 uppercase tracking-wider">10 ops</span>
+        <span className="text-[9px] font-mono text-slate-600 uppercase tracking-wider">13 ops</span>
       </div>
 
       {/* Categories */}

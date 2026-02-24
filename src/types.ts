@@ -111,3 +111,23 @@ export interface LogEntry {
   status: "success" | "pending" | "failed" | "requires_confirmation";
   details: string;
 }
+
+// ─── Messages ────────────────────────────────────────────────────────────────
+
+export interface Message {
+  message_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  buyer_rating: number;
+  message_text: string;
+  timestamp: string;
+  status: 'answered' | 'unanswered';
+  item_id?: string;
+  listing_title?: string;
+}
+
+export interface MessageThread {
+  messages: Message[];
+  buyer_info: { id: string; rating: number; transaction_count: number };
+  last_response_time?: string;
+}
