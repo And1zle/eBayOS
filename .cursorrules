@@ -1,0 +1,203 @@
+# eBayOS Project Guidelines for Cursor
+
+## Architecture Overview
+- **Frontend**: React 18 + TypeScript + Vite
+  - Dev server: localhost:4874
+  - Prod: https://100.67.134.63:4873 (Docker on CasaOS)
+- **Backend**: Express.js (Node 20) + TypeScript
+  - Proxies /api/* calls to http://ebay-listing-assistant:5000
+  - Self-signed HTTPS (cert.pem, key.pem)
+- **Deployment**: Docker on CasaOS home server
+  - Server: pop-os.tail2de5b8.ts.net (Tailscale)
+  - Tailscale IP: 100.67.134.63
+  - SSH: houdinib@100.67.134.63
+- **Styling**: Tailwind CSS with glass-morphism aesthetic
+
+## API Endpoints (Express Server)
+All endpoints are POST and return { success: bool, ... }
+
+### Listing Management
+- `POST /api/active-listings` → { items: Listing[] }
+  - Response Listing: { itemId, title, price (string), watchCount (string), bids (string), startTime (ISO), condition }
+- `POST /api/create-listing` → { title, description, price, quantity, category_id }
+- `POST /api/end-listing` → { listing_id, reason? }
+- `POST /api/duplicate-listing` → { listing_id, price_override?, quantity_override? }
+- `POST /api/bulk-end-listings` → { filter_condition?, older_than_days?, below_price? }
+
+### Pricing
+- `POST /api/update-price` → { listing_id, adjustment_value (negative = decrease) }
+- `POST /api/bulk-price-adjust` → { filter_condition?, adjustment_value }
+
+### Negotiations & Offers
+- `POST /api/enable-offers` → { listing_id, discount_type, discount_value }
+- `POST /api/send-offer-to-watchers` → { listing_id, discount_type, discount_value } (40% max cap)
+- `POST /api/respond-to-buyer` → { order_id, message }
+
+### Account Settings
+- `POST /api/update-fulfillment` → { handling_time?, vacation_mode?, auto_reply_message? }
+
+## Intent System (Natural Language → API Calls)
+- **Parser**: `src/services/intentParser.ts`
+  - Uses Claude API to parse user commands into structured intents
+  - System prompt includes all 10 intent schemas with example JSON
+- **Executor**: `src/services/spellExecutor.ts`
+  - Each intent maps to one or more API calls
+  - Handles error responses, user warnings (e.g., watchers/bids alerts)
+- **Types**: `src/types.ts`
+  - Intent enum: CREATE_LISTING, UPDATE_PRICE, BULK_PRICE_ADJUST, END_LISTING, DUPLICATE_LISTING, SEND_OFFER_TO_WATCHERS, UPDATE_FULFILLMENT_SETTINGS, BULK_END_LISTINGS, ENABLE_OFFERS, RESPOND_TO_BUYER
+  - Each intent has corresponding field interface (e.g., UpdatePriceFields, EndListingFields)
+
+## UI Components & Patterns
+
+### Glass-Morphism Design
+- Panel: `className="glass-panel rounded-xl p-5 border border-white/5"`
+- Stat cards: `p-6 rounded-lg bg-white/5 border border-white/5`
+- Large text: `text-4xl font-black text-white` (values), `text-[10px] uppercase tracking-wider` (labels)
+
+### Market Pulse Dashboard (4 Tabs)
+- **Alt+1 Liquidity**: Capital aging buckets (0-30d liquid, 30-90d slowing, 90d+ trapped)
+- **Alt+2 Market I/O**: Price distribution by tier + avg watchers
+- **Alt+3 Drift**: Avg watchers per price tier + top 3 watched items
+- **Alt+4 Telemetry**: Watch pressure (price × watchers) + active bids + pressure index
+
+### Colors & States
+- Success/Green: `emerald-500` (text: `emerald-400`)
+- Warning/Yellow: `amber-500` (text: `amber-400`)
+- Danger/Red: `red-500` (text: `red-400`)
+- Info/Blue: `blue-500` (text: `blue-400`)
+- Neutral: `slate-500` (text), `white/5` (bg), `white/10` (borders)
+
+### Charts
+- Use Recharts (BarChart, ResponsiveContainer)
+- Bar radius: `[4, 4, 0, 0]`
+- Grid: `stroke="#ffffff10"` vertical={false}
+- Tooltip: uses TOOLTIP_STYLE from MarketPulse.tsx
+
+## Project Structure
+```
+ebay-command-plane/
+├── src/
+│   ├── components/          # React components
+│   │   ├── MarketPulse.tsx        # Dashboard with 4 F-Key tabs
+│   │   ├── ExecutionPanel.tsx     # Command preview + diff system
+│   │   ├── CommandBar.tsx         # Natural language input
+│   │   ├── RightSidebar.tsx       # Command library (4 categories)
+│   │   ├── SmartSuggestions.tsx   # AI recommendations
+│   │   ├── IntuitionEngine.tsx    # Seller DNA display
+│   │   └── [other pages]
+│   ├── services/
+│   │   ├── intentParser.ts        # Claude API → Intent parsing
+│   │   └── spellExecutor.ts       # Intent → API calls
+│   ├── lib/
+│   │   ├── summary.ts             # Intent summary generation
+│   │   └── utils.ts               # Tailwind cn() helper
+│   ├── types.ts                   # TypeScript interfaces
+│   ├── App.tsx                    # Main layout
+│   └── main.tsx                   # Entry point
+├── server.ts                      # Express server + API proxy
+├── server/
+│   ├── ebay-api.ts                # eBay backend integration
+│   └── intuition-engine.ts        # AI recommendations engine
+├── docker-compose.yml
+├── Dockerfile
+├── vite.config.ts
+├── tsconfig.json
+├── package.json
+└── .env.example
+```
+
+## Coding Standards
+- **Language**: TypeScript strict mode
+- **Imports**: Use `@/lib`, `@/services`, `@/components` (alias imports from vite.config.ts)
+- **Variables**: const preferred, no var
+- **Styling**: Tailwind classes only. Dynamic styles use inline `style={{ }}` for width/height/transforms
+- **Components**:
+  - PascalCase names
+  - Functional components with hooks
+  - Props as single interface argument
+  - Example: `function MyComponent({ listings }: { listings: Listing[] }) { ... }`
+- **Naming**:
+  - Intent names: SCREAMING_SNAKE_CASE
+  - Functions: camelCase
+  - Components: PascalCase
+  - Constants: SCREAMING_SNAKE_CASE (for public APIs)
+- **Error Handling**:
+  - Fetch calls always include `.catch()` with user-friendly message
+  - API errors shown in alert or toast
+  - No silent failures
+
+## Key Implementation Details
+
+### Data Flow (Command Execution)
+1. User types natural language in CommandBar
+2. intentParser.ts calls Claude API to parse
+3. Claude returns { intent, fields } JSON
+4. spellExecutor.ts executes matching handler
+5. Handler calls /api/... endpoint
+6. ExecutionPanel shows preview diff before confirmation
+7. User clicks "Confirm" button
+8. Final API call sent, results displayed
+
+### Preview Diff System (ExecutionPanel)
+- Fetches /api/active-listings before + after executing intent
+- Computes diff for each intent type:
+  - UPDATE_PRICE: old price → new price
+  - BULK_PRICE_ADJUST: avg price before/after, total listed value
+  - END_LISTING: title + "ENDED", warns if watchers/bids
+  - SEND_OFFER_TO_WATCHERS: discounted price + watcher count
+- Shows side-by-side with strikethrough before, colored after
+- Red border + "CONFIRM REQUIRED" badge for destructive intents
+
+### Command Library (RightSidebar)
+- 4 collapsible categories:
+  - **Inventory** (blue): CREATE_LISTING, END_LISTING, DUPLICATE_LISTING, BULK_END_LISTINGS
+  - **Pricing** (emerald): UPDATE_PRICE, BULK_PRICE_ADJUST
+  - **Negotiation** (purple): ENABLE_OFFERS, SEND_OFFER_TO_WATCHERS, RESPOND_TO_BUYER
+  - **Account Controls** (amber): UPDATE_FULFILLMENT_SETTINGS
+- Clicking a command prefills CommandBar
+- Shows ExecutionPanel with live preview
+
+## Environment Variables
+- `.env.example` provided, copy to `.env` locally
+- `VITE_API_URL`: API endpoint (default: same-origin via /api)
+- No secret tokens needed client-side (all proxied via server.ts)
+
+## Deployment
+- Docker image: `ebayos:latest`
+- Build: `docker compose up -d --build`
+- Volumes: .env file only
+- Ports: 4873 (HTTPS), cert/key auto-generated if missing
+- Backend: Assumes http://ebay-listing-assistant:5000 reachable in network
+
+## Common Tasks in Cursor
+
+### Add a new Intent
+1. Add to Intent enum in `src/types.ts`
+2. Create `TypeNameFields` interface
+3. Add schema to intentParser.ts SYSTEM_PROMPT
+4. Add handler to spellExecutor.ts
+5. Add summary to `src/lib/summary.ts`
+6. Update RightSidebar.tsx category
+
+### Add a new Dashboard Tab
+1. Create panel function in MarketPulse.tsx (e.g., `function NewPanel({ listings } { ... })`)
+2. Add to TABS array with key, label, id
+3. Add conditional render in return statement
+4. Update Alt+N keydown handler if needed
+
+### Debug API Calls
+1. Check server.ts console logs
+2. Verify /api/* endpoint exists in server.ts (line ~200)
+3. Test with curl: `curl -X POST http://localhost:4874/api/active-listings`
+4. Check backend connectivity: `http://ebay-listing-assistant:5000` reachable?
+
+### Deploy Changes
+1. Commit: `git add . && git commit -m "message"`
+2. Push: `git push origin main`
+3. SSH to server: `ssh houdinib@100.67.134.63`
+4. Pull + rebuild:
+   ```bash
+   cd ~/ebay-command-plane
+   git pull
+   docker compose up -d --build
+   ```
