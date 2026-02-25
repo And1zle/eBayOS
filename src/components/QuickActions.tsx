@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, TrendingDown, TrendingUp, Send, Trash2, Heart, Percent, Clock, AlertCircle, Copy, DollarSign, Pause } from 'lucide-react';
+import { Zap, TrendingDown, TrendingUp, Send, Trash2, Heart, Percent, Clock, AlertCircle, Copy, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickActionsProps {
@@ -126,16 +126,6 @@ const ACTIONS = [
     bg: 'bg-rose-500/10',
     border: 'border-rose-500/20',
     hoverGlow: 'hover:shadow-rose-500/10',
-  },
-  {
-    label: 'Pause Low Rating',
-    description: 'Deactivate items with condition issues',
-    command: 'End listings marked as refurbished',
-    icon: Pause,
-    color: 'text-slate-400',
-    bg: 'bg-slate-500/10',
-    border: 'border-slate-500/20',
-    hoverGlow: 'hover:shadow-slate-500/10',
   },
 ];
 
