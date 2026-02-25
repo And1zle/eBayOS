@@ -267,34 +267,42 @@ function AppContent() {
           {/* ── Control Plane (Dashboard) ───────────────────────────────────── */}
           {currentView === 'control-plane' && (
             <div className="w-full space-y-8">
-              {/* Status Bar with Vital Metrics */}
-              <div className="border-b border-white/5">
-                <div className="flex items-center gap-2 text-slate-400 text-sm px-4 py-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  <span>System Online</span>
-                  <span className="text-slate-600">•</span>
-                  <span>v2.4.0-beta</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-emerald-400 text-xs">Backend connected → 100.67.134.63:5000</span>
+              {/* Unified Header: Status + Command Bar */}
+              <div className="space-y-3">
+                {/* Status Line - Integrated with Command Bar */}
+                <div className="flex items-center justify-between px-1">
+                  {/* Left: System Status */}
+                  <div className="flex items-center gap-2 text-slate-400 text-xs">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                    <span className="font-mono">System Online</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="font-mono">v2.4.0-beta</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-emerald-400 font-mono">Backend connected → 100.67.134.63:5000</span>
+                  </div>
+
+                  {/* Right: Vital Metrics Compact */}
+                  <div className="flex items-center gap-2">
+                    {[
+                      { label: 'Sell-Through', value: extendedStats.sellThroughRate !== null ? `${extendedStats.sellThroughRate.toFixed(1)}%` : '—', color: 'text-emerald-400' },
+                      { label: 'Avg Response', value: extendedStats.avgResponseHours !== null ? `${extendedStats.avgResponseHours.toFixed(1)}h` : '—', color: 'text-blue-400' },
+                      { label: 'Revenue 7d', value: extendedStats.revenue7d !== null ? `$${extendedStats.revenue7d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—', color: 'text-violet-400' },
+                      { label: 'Avg Listed', value: extendedStats.avgDaysListed !== null ? `${Math.round(extendedStats.avgDaysListed)}d` : '—', color: 'text-amber-400' },
+                    ].map((stat) => (
+                      <div key={stat.label} className="text-center px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+                        <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                        <p className={cn('text-xs font-bold', stat.color)}>{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Vital Metrics in Status Bar */}
-                <div className="grid grid-cols-4 gap-2 px-4 pb-3">
-                  {[
-                    { label: 'Sell-Through', value: extendedStats.sellThroughRate !== null ? `${extendedStats.sellThroughRate.toFixed(1)}%` : '—', icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-                    { label: 'Avg Response', value: extendedStats.avgResponseHours !== null ? `${extendedStats.avgResponseHours.toFixed(1)}h` : '—', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-                    { label: 'Revenue 7d', value: extendedStats.revenue7d !== null ? `$${extendedStats.revenue7d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—', icon: DollarSign, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
-                    { label: 'Avg Listed', value: extendedStats.avgDaysListed !== null ? `${Math.round(extendedStats.avgDaysListed)}d` : '—', icon: Calendar, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-                  ].map((stat) => (
-                    <div key={stat.label} className={cn('p-3 rounded-lg border text-center', stat.border, stat.bg)}>
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <stat.icon className={cn('w-3 h-3', stat.color)} />
-                        <p className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">{stat.label}</p>
-                      </div>
-                      <p className={cn('text-sm font-bold', stat.color)}>{stat.value}</p>
-                    </div>
-                  ))}
-                </div>
+                {/* Command Bar */}
+                <CommandBar
+                  onSubmit={handleCommandSubmit}
+                  isProcessing={isProcessing}
+                  prefill={prefillCommand}
+                />
               </div>
 
               {/* Quick Stats Row */}
@@ -319,12 +327,7 @@ function AppContent() {
                 ))}
               </div>
 
-
-              <CommandBar
-                onSubmit={handleCommandSubmit}
-                isProcessing={isProcessing}
-                prefill={prefillCommand}
-              />
+              {/* Quick Stats Row */}
 
               <AnimatePresence mode="wait">
                 {currentCommand && (
