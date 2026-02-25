@@ -5,6 +5,7 @@ import {
   Image as ImageIcon, CheckCircle2, Zap, AlertCircle, DollarSign
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useNotifications } from '../contexts/NotificationContext';
 
 type Tab = 'listing' | 'mylistings' | 'specifics' | 'market' | 'policies';
 
@@ -43,6 +44,7 @@ interface ActiveListing {
 }
 
 export function VisionUplinkPage() {
+  const { addNotification } = useNotifications();
   const [files, setFiles] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('listing');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -220,12 +222,24 @@ export function VisionUplinkPage() {
       });
       const d = await r.json();
       if (d.success) {
-        alert(`✅ Listed! Item ID: ${d.itemId}\n${d.listingUrl}`);
+        addNotification({
+          type: 'success',
+          title: 'Listing Published',
+          message: `Item ID: ${d.itemId} — live on eBay`,
+        });
       } else {
-        alert(`❌ Publish failed: ${d.errors?.join(', ') || d.error}`);
+        addNotification({
+          type: 'error',
+          title: 'Publish Failed',
+          message: d.errors?.join(', ') || d.error || 'Unknown error',
+        });
       }
     } catch (err: any) {
-      alert(`Connection error: ${err.message}`);
+      addNotification({
+        type: 'error',
+        title: 'Connection Error',
+        message: err.message,
+      });
     } finally {
       setIsAnalyzing(false);
     }

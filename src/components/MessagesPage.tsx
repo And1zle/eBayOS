@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Message, MessageThread } from '@/types';
 import { MessageList } from './MessageList';
 import { MessageDetail } from './MessageDetail';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const MOCK_MESSAGES: Message[] = [
   {
@@ -76,6 +77,7 @@ function buildThread(selected: Message, allMessages: Message[]): MessageThread {
 }
 
 export function MessagesPage() {
+  const { addNotification } = useNotifications();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -133,15 +135,30 @@ export function MessagesPage() {
             m.buyer_id === selectedMessage.buyer_id ? { ...m, status: 'answered' as const } : m
           )
         );
+        addNotification({
+          type: 'success',
+          title: 'Reply Sent',
+          message: `Message sent to ${selectedMessage.buyer_name}`,
+        });
       } else {
         setSendStatus('idle');
         setConfirmReply(null);
+        addNotification({
+          type: 'error',
+          title: 'Send Failed',
+          message: 'Reply could not be delivered — try again',
+        });
       }
-    } catch {
+    } catch (err) {
       setSendStatus('idle');
       setConfirmReply(null);
+      addNotification({
+        type: 'error',
+        title: 'Connection Error',
+        message: 'Could not reach server',
+      });
     }
-  }, [confirmReply, selectedMessage]);
+  }, [confirmReply, selectedMessage, addNotification]);
 
   return (
     <div className="glass-panel rounded-xl p-5 border border-white/5 flex flex-col h-full">

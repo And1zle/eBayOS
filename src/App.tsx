@@ -23,12 +23,14 @@ import { parseCommand } from './services/intentParser';
 import { executeSpell } from './services/spellExecutor';
 import { ParsedCommand, LogEntry, Intent } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, DollarSign, Package, MessageSquare as MsgIcon, ShoppingCart } from 'lucide-react';
+import { Search, DollarSign, Package, MessageSquare as MsgIcon, ShoppingCart } from 'lucide-react';
 import { cn } from './lib/utils';
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
+import { NotificationPanel } from './components/NotificationPanel';
 
 type View = 'control-plane' | 'spellbook' | 'audit-log' | 'preferences' | 'vision-uplink' | 'inventory' | 'orders' | 'messages' | 'analytics';
 
-export default function App() {
+function AppContent() {
   const [currentView, setCurrentView] = useState<View>('control-plane');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentCommand, setCurrentCommand] = useState<ParsedCommand | null>(null);
@@ -39,6 +41,9 @@ export default function App() {
   // Quick-stats state
   const [quickStats, setQuickStats] = useState({ totalValue: 0, activeListings: 0, unansweredMessages: 0, pendingOrders: 0 });
   const [badges, setBadges] = useState<Record<string, number>>({});
+
+  // Notifications
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     // Fetch listing stats
@@ -106,6 +111,13 @@ export default function App() {
       itemLogs,
     };
 
+    // Push notification for spell execution
+    addNotification({
+      type: status === 'success' ? 'success' : 'error',
+      title: status === 'success' ? 'Spell Executed' : 'Execution Failed',
+      message: details,
+    });
+
     setLogs(prev => [newLog, ...prev]);
     setCurrentCommand(null);
     setInputHistory("");
@@ -160,10 +172,7 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-[#0B0E14]" />
-            </button>
+            <NotificationPanel />
           </div>
         </header>
 
@@ -262,5 +271,13 @@ export default function App() {
 
       <RightSidebar onSelectExample={handleCommandSubmit} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <NotificationProvider>
+      <AppContent />
+    </NotificationProvider>
   );
 }

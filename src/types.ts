@@ -141,3 +141,16 @@ export interface MessageThread {
   buyer_info: { id: string; rating: number; transaction_count: number };
   last_response_time?: string;
 }
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+}
