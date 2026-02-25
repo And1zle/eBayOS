@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Message, MessageThread, ActiveListing } from '@/types';
+import { Message, MessageThread, ActiveListing, GhostRiskAnalysis } from '@/types';
 import { cn } from '@/lib/utils';
-import { Star, Send, Sparkles, Loader2, MessageSquare, Lightbulb, Eye, TrendingUp } from 'lucide-react';
+import { Star, Send, Sparkles, Loader2, MessageSquare, Lightbulb, Eye, TrendingUp, AlertTriangle, AlertCircle as AlertIcon, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { generateReplySuggestions, extractItemReference } from '../services/messageAnalyzer';
+import { analyzeGhostRisk } from '../services/ghostDetector';
 
 interface MessageDetailProps {
   thread: MessageThread | null;
@@ -34,6 +36,8 @@ export function MessageDetail({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [referencedItem, setReferencedItem] = useState<ActiveListing | null>(null);
   const [loadingItem, setLoadingItem] = useState(false);
+  const [ghostAnalysis, setGhostAnalysis] = useState<GhostRiskAnalysis | null>(null);
+  const [analyzingGhost, setAnalyzingGhost] = useState(false);
   const suggestionCacheRef = useRef<Record<string, string[]>>({});
 
   if (!thread) {
@@ -74,6 +78,21 @@ export function MessageDetail({
 
     extractItem();
   }, [thread?.messages[0]?.message_id, lastMessage?.message_text]);
+
+  // Analyze ghost risk when thread changes
+  useEffect(() => {
+    if (!thread || !lastMessage) return;
+
+    setAnalyzingGhost(true);
+    try {
+      const analysis = analyzeGhostRisk(lastMessage, thread);
+      setGhostAnalysis(analysis);
+    } catch (err) {
+      console.error('Ghost analysis error:', err);
+    } finally {
+      setAnalyzingGhost(false);
+    }
+  }, [thread?.messages[0]?.message_id]);
 
   // Debounced suggestion generation with caching
   const handleGenerateSuggestions = useCallback(async () => {
@@ -132,6 +151,63 @@ export function MessageDetail({
           <div className="text-lg font-bold text-white">{buyer_info.transaction_count}</div>
         </div>
       </div>
+
+      {/* Ghost Risk Analysis */}
+      {ghostAnalysis && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            'p-4 rounded-lg border',
+            ghostAnalysis.level === 'HIGH'
+              ? 'bg-red-500/10 border-red-500/20'
+              : ghostAnalysis.level === 'MEDIUM'
+                ? 'bg-amber-500/10 border-amber-500/20'
+                : 'bg-emerald-500/10 border-emerald-500/20'
+          )}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            {ghostAnalysis.level === 'HIGH' ? (
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+            ) : ghostAnalysis.level === 'MEDIUM' ? (
+              <AlertIcon className="w-4 h-4 text-amber-400" />
+            ) : (
+              <AlertIcon className="w-4 h-4 text-emerald-400" />
+            )}
+            <span
+              className={cn(
+                'font-semibold text-sm',
+                ghostAnalysis.level === 'HIGH'
+                  ? 'text-red-400'
+                  : ghostAnalysis.level === 'MEDIUM'
+                    ? 'text-amber-400'
+                    : 'text-emerald-400'
+              )}
+            >
+              Ghost Risk: {ghostAnalysis.level} ({ghostAnalysis.score}/100)
+            </span>
+          </div>
+
+          {/* Factors */}
+          <div className="space-y-2 mb-3">
+            {ghostAnalysis.factors.map((factor, idx) => (
+              <div key={idx} className="text-xs text-slate-400">
+                <p className="font-medium text-white">{factor.name}</p>
+                <p className="text-[10px] text-slate-500 ml-2">{factor.explanation}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Recommendations */}
+          <div className="space-y-1 pt-3 border-t border-white/10">
+            {ghostAnalysis.recommendations.map((rec, idx) => (
+              <p key={idx} className="text-xs text-slate-300">
+                {rec}
+              </p>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Conversation Thread */}
       <div className="flex-1 overflow-y-auto space-y-3 min-h-0 border-t border-white/10 pt-4">
@@ -255,21 +331,30 @@ export function MessageDetail({
 
           <div className="flex items-center justify-between">
             <button
-              onClick={handleGenerateSuggestions}
-              disabled={loadingSuggestions}
+              onClick={() => {
+                if (ghostAnalysis) {
+                  // Already analyzed, scroll to ghost risk section
+                  document.querySelector('[data-ghost-risk]')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              disabled={analyzingGhost}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-                loadingSuggestions
-                  ? 'bg-white/5 text-slate-600 cursor-not-allowed'
-                  : 'bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300'
+                ghostAnalysis
+                  ? 'bg-orange-500/20 border border-orange-500/30 text-orange-400 hover:bg-orange-500/30'
+                  : analyzingGhost
+                    ? 'bg-white/5 text-slate-600 cursor-not-allowed'
+                    : 'bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30'
               )}
             >
-              {loadingSuggestions ? (
+              {analyzingGhost ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
+              ) : ghostAnalysis ? (
+                <CheckCircle2 className="w-3 h-3" />
               ) : (
                 <Sparkles className="w-3 h-3" />
               )}
-              {loadingSuggestions ? 'Generating...' : 'AI Suggest'}
+              {ghostAnalysis ? 'Risk Analyzed' : analyzingGhost ? 'Analyzing...' : 'Analyze Buyer'}
             </button>
             <button
               onClick={() => replyDraft.trim() && onSendReply(replyDraft.trim())}

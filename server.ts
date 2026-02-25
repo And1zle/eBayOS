@@ -32,13 +32,29 @@ async function startServer() {
       return res.status(400).json({ error: "base64 and filename required" });
     }
 
-    // For now, just return a mock URL (would save to disk in real implementation)
-    console.log(`[Upload] ${filename} (${base64.length} bytes)`);
-    res.json({
-      success: true,
-      url: `/images/${filename}`,
-      path: `/DATA/AppData/ebayos/images/${filename}`,
-    });
+    try {
+      // Create images directory if not exists
+      const imagesDir = path.join(__dirname, 'images');
+      if (!fs.existsSync(imagesDir)) {
+        fs.mkdirSync(imagesDir, { recursive: true });
+      }
+
+      // Decode base64 and save to disk
+      const buffer = Buffer.from(base64, 'base64');
+      const filePath = path.join(imagesDir, filename);
+      fs.writeFileSync(filePath, buffer);
+
+      console.log(`[Upload] Saved ${filename} (${buffer.length} bytes) to ${filePath}`);
+
+      res.json({
+        success: true,
+        url: `/images/${filename}`,
+        path: filePath,
+      });
+    } catch (err: any) {
+      console.error('[Upload Error]', err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // Get sold listings (mock data for testing)
@@ -117,6 +133,9 @@ async function startServer() {
     res.json({ success: true, results });
   });
 
+  // Serve uploaded images statically
+  app.use('/images', express.static(path.join(__dirname, 'images')));
+
   // ── Proxy all /api/* → Docker backend ─────────────────────────────────────
   app.use("/api", async (req: any, res: any) => {
     const targetUrl = BACKEND_URL + req.originalUrl;
@@ -159,13 +178,22 @@ async function startServer() {
     }
   }
 
-  // Use HTTPS in production if cert files exist (generated during Docker build)
-  const certPath = path.join(__dirname, "cert.pem");
-  const keyPath = path.join(__dirname, "key.pem");
-  if (process.env.NODE_ENV === "production" && fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+  // HTTPS with Tailscale certs (auto-renewed)
+  const useHttp = process.env.USE_HTTP === "1";
+  const certPath = process.env.CERT_PATH || '/etc/certs/tailscale/pop-os.tail2de5b8.ts.net.crt';
+  const keyPath = process.env.KEY_PATH || '/etc/certs/tailscale/pop-os.tail2de5b8.ts.net.key';
+
+  const useHttps =
+    process.env.NODE_ENV === "production" &&
+    !useHttp &&
+    fs.existsSync(certPath) &&
+    fs.existsSync(keyPath);
+
+  if (useHttps) {
     https.createServer({ cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) }, app)
       .listen(PORT, "0.0.0.0", () => {
-        console.log(`🚀 eBayOS running on https://localhost:${PORT}`);
+        console.log(`🚀 eBayOS running on https://pop-os.tail2de5b8.ts.net:${PORT}`);
+        console.log(`🔐 Using Tailscale certs (auto-renewed)`);
         console.log(`🔌 Proxying /api/* → ${BACKEND_URL}`);
       });
   } else {

@@ -154,6 +154,19 @@ export interface MessageThread {
   last_response_time?: string;
 }
 
+// ─── Ghost Detector (Phase 7 Buyer Risk Analysis) ────────────────────────
+
+export interface GhostRiskAnalysis {
+  score: number;                  // 0-100
+  level: 'LOW' | 'MEDIUM' | 'HIGH';
+  factors: {
+    name: string;
+    weight: number;
+    explanation: string;
+  }[];
+  recommendations: string[];
+}
+
 // ─── Orders ──────────────────────────────────────────────────────────────
 
 export type OrderStatus = 'paid' | 'shipped' | 'delivered' | 'cancelled';

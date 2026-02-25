@@ -45,14 +45,45 @@ export function CrosslistPage({ items, onComplete }: CrosslistPageProps) {
           [item.itemId]: { itemId: item.itemId, status: 'processing' },
         }));
 
-        // Simulate processing delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Upload images (stub)
+        // Upload images
         if (edited.images && edited.images.length > 0) {
-          // In real implementation, would POST to /api/upload-image
-          // and get back URLs
+          for (const imgUrl of edited.images) {
+            try {
+              // If URL is already a data URL, extract base64
+              let base64 = imgUrl;
+              if (!imgUrl.startsWith('data:')) {
+                // Fetch image and convert to base64
+                const resp = await fetch(imgUrl);
+                const blob = await resp.blob();
+                const reader = new FileReader();
+                base64 = await new Promise((resolve) => {
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.readAsDataURL(blob);
+                });
+              }
+
+              // Upload to backend
+              const uploadResp = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  base64,
+                  filename: `${item.itemId}_${Date.now()}.jpg`,
+                }),
+              });
+
+              if (!uploadResp.ok) throw new Error('Upload failed');
+              const uploadData = await uploadResp.json();
+              console.log(`Image uploaded: ${uploadData.url}`);
+            } catch (err: any) {
+              console.error('Image upload error:', err);
+              // Continue to next image on error
+            }
+          }
         }
+
+        // Simulate brief processing delay
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // Check if extension is available
         if (extensionInstalled) {

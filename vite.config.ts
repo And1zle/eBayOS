@@ -15,9 +15,23 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    build: {
+      outDir: 'dist',
+      minify: 'esbuild',  // Built-in, no extra dependency needed
+      rollupOptions: {
+        output: {
+          // Code-splitting: separate vendor chunks for better caching
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'motion'],
+            ui: ['lucide-react'],
+          },
+        },
+      },
+      sourcemap: false,  // Don't ship source maps in production
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modify - file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };

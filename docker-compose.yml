@@ -15,6 +15,11 @@ services:
       - BACKEND_URL=http://ebay-listing-assistant:5000
       # Gemini key for NL command parsing (intent parser runs client-side via Vite inject)
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # Tailscale HTTPS (0 = enforce HTTPS with Tailscale certs, 1 = HTTP fallback for local dev)
+      - USE_HTTP=${USE_HTTP:-0}
+    volumes:
+      # Mount Tailscale certs (read-only) — auto-renewed by Tailscale daemon
+      - /etc/certs/tailscale:/etc/certs/tailscale:ro
     networks:
       - ebayos_net
       # Join the existing backend network so we can reach ebay-listing-assistant by name

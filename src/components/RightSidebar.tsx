@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, ChevronRight, ChevronDown, Zap, RefreshCw, Mail, Tag, DollarSign, XCircle, Copy, Send, Settings, Trash2, MessageSquare, BarChart3, FileText } from 'lucide-react';
+import { Terminal, ChevronRight, ChevronDown, Zap, RefreshCw, Mail, Tag, DollarSign, XCircle, Copy, Send, Settings, Trash2, MessageSquare, BarChart3, FileText, ArrowUpRight, Download } from 'lucide-react';
 import { Intent } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +73,15 @@ const CATEGORIES: { id: string; label: string; accent: string; commands: Command
       { intent: Intent.UNKNOWN, label: 'EXPORT_REPORT', icon: FileText, color: 'text-violet-400', bg: 'bg-violet-400/10', border: 'border-violet-400/20', example: 'Export analytics report for my current inventory' },
     ],
   },
+  {
+    id: 'crosslist',
+    label: 'Crosslist',
+    accent: 'text-violet-400',
+    commands: [
+      { intent: Intent.UNKNOWN, label: 'START_CROSSLIST', icon: ArrowUpRight, color: 'text-violet-400', bg: 'bg-violet-400/10', border: 'border-violet-400/20', example: 'Select items from inventory and crosslist to Poshmark' },
+      { intent: Intent.UNKNOWN, label: 'EXPORT_LISTINGS', icon: Download, color: 'text-violet-400', bg: 'bg-violet-400/10', border: 'border-violet-400/20', example: 'Export selected listings as CSV for crosslist preparation' },
+    ],
+  },
 ];
 
 export function RightSidebar({ onSelectExample }: RightSidebarProps) {
@@ -87,7 +96,7 @@ export function RightSidebar({ onSelectExample }: RightSidebarProps) {
           <Terminal className="w-4 h-4 text-blue-400" />
           Command Library
         </h2>
-        <span className="text-[9px] font-mono text-slate-600 uppercase tracking-wider">13 ops</span>
+        <span className="text-[9px] font-mono text-slate-600 uppercase tracking-wider">15 ops</span>
       </div>
 
       {/* Categories */}
