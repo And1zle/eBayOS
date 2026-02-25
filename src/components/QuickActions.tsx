@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, TrendingDown, TrendingUp, Send, Trash2, Heart } from 'lucide-react';
+import { Zap, TrendingDown, TrendingUp, Send, Trash2, Heart, Percent, Clock, AlertCircle, Copy, DollarSign, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickActionsProps {
@@ -66,6 +66,76 @@ const ACTIONS = [
     bg: 'bg-cyan-500/10',
     border: 'border-cyan-500/20',
     hoverGlow: 'hover:shadow-cyan-500/10',
+  },
+  {
+    label: 'Raise All 10%',
+    description: 'Aggressive price increase across inventory',
+    command: 'Increase all prices by 10%',
+    icon: TrendingUp,
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    hoverGlow: 'hover:shadow-blue-500/10',
+  },
+  {
+    label: 'Apply Smart Price',
+    description: 'Auto-adjust prices based on market rates',
+    command: 'Apply smart pricing to all listings',
+    icon: Percent,
+    color: 'text-indigo-400',
+    bg: 'bg-indigo-500/10',
+    border: 'border-indigo-500/20',
+    hoverGlow: 'hover:shadow-indigo-500/10',
+  },
+  {
+    label: 'Set Handling Time',
+    description: 'Update handling time to 1 business day',
+    command: 'Set handling time to 1 day',
+    icon: Clock,
+    color: 'text-orange-400',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/20',
+    hoverGlow: 'hover:shadow-orange-500/10',
+  },
+  {
+    label: 'Flag Low Stock',
+    description: 'Disable items with only 1 left',
+    command: 'Disable listings with quantity below 2',
+    icon: AlertCircle,
+    color: 'text-red-400',
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/20',
+    hoverGlow: 'hover:shadow-red-500/10',
+  },
+  {
+    label: 'Duplicate Best Sellers',
+    description: 'Create copies of top performing items',
+    command: 'Duplicate listings with most watchers',
+    icon: Copy,
+    color: 'text-pink-400',
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/20',
+    hoverGlow: 'hover:shadow-pink-500/10',
+  },
+  {
+    label: 'Liquidate Slow Movers',
+    description: 'Apply 20% discount to low watcher items',
+    command: 'Decrease prices by 20% for listings below 5 watchers',
+    icon: DollarSign,
+    color: 'text-rose-400',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20',
+    hoverGlow: 'hover:shadow-rose-500/10',
+  },
+  {
+    label: 'Pause Low Rating',
+    description: 'Deactivate items with condition issues',
+    command: 'End listings marked as refurbished',
+    icon: Pause,
+    color: 'text-slate-400',
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/20',
+    hoverGlow: 'hover:shadow-slate-500/10',
   },
 ];
 

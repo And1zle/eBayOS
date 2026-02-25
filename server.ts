@@ -78,6 +78,26 @@ async function startServer() {
     res.json(mockSoldItems);
   });
 
+  // Send offer to watchers (stub endpoint)
+  app.post("/api/send-offer-to-watchers", (req: any, res: any) => {
+    const { itemId, discountType, discountValue } = req.body;
+
+    if (!itemId || !discountType || discountValue == null) {
+      return res.status(400).json({ error: "itemId, discountType, discountValue required" });
+    }
+
+    const discountStr = discountType === 'percentage' ? `${discountValue}%` : `$${discountValue}`;
+    console.log(`[eBay Marketing] Sending ${discountStr} offer to watchers of item ${itemId} (stub)`);
+
+    res.json({
+      success: true,
+      message: `✅ Offer of ${discountStr} off sent to all watchers of item ${itemId}`,
+      itemId,
+      discountType,
+      discountValue,
+    });
+  });
+
   // Crosslist to Poshmark (stub endpoint)
   app.post("/api/crosslist/poshmark", (req: any, res: any) => {
     const { items, extensionInstalled } = req.body;
