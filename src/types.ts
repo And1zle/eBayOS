@@ -124,6 +124,15 @@ export interface LogEntry {
 
 // ─── Messages ────────────────────────────────────────────────────────────────
 
+export enum MessageIntent {
+  PRICE_INQUIRY = "PRICE_INQUIRY",
+  SHIPPING_QUESTION = "SHIPPING_QUESTION",
+  BULK_OFFER = "BULK_OFFER",
+  COMPLAINT = "COMPLAINT",
+  PRAISE = "PRAISE",
+  OTHER = "OTHER",
+}
+
 export interface Message {
   message_id: string;
   buyer_id: string;
@@ -134,12 +143,40 @@ export interface Message {
   status: 'answered' | 'unanswered';
   item_id?: string;
   listing_title?: string;
+  // Phase 5: AI enhancements
+  intent?: MessageIntent;
+  suggestedReplies?: string[];
 }
 
 export interface MessageThread {
   messages: Message[];
   buyer_info: { id: string; rating: number; transaction_count: number };
   last_response_time?: string;
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────
+
+export type OrderStatus = 'paid' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface Order {
+  order_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  buyer_email: string;
+  item_id: string;
+  item_title: string;
+  item_price: number;
+  quantity: number;
+  order_date: string;
+  status: OrderStatus;
+  tracking_number?: string;
+  shipping_address?: {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  };
 }
 
 // ─── Notifications ───────────────────────────────────────────────────────────

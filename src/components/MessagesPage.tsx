@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Message, MessageThread } from '@/types';
+import { Message, MessageThread, MessageIntent } from '@/types';
 import { MessageList } from './MessageList';
 import { MessageDetail } from './MessageDetail';
 import { useNotifications } from '../contexts/NotificationContext';
+import { generateReplySuggestions, detectMessageIntent } from '../services/messageAnalyzer';
 
 const MOCK_MESSAGES: Message[] = [
   {

@@ -17,6 +17,7 @@ import { VisionUplinkPage } from './components/VisionUplinkPage';
 import { InventoryPage } from './components/InventoryPage';
 import { MessagesPage } from './components/MessagesPage';
 import { AnalyticsPage } from './components/AnalyticsPage';
+import { OrdersPage } from './components/OrdersPage';
 import { WatchlistHeatmap } from './components/WatchlistHeatmap';
 import { QuickActions } from './components/QuickActions';
 import { CrosslistPage } from './components/CrosslistPage';
@@ -361,13 +362,7 @@ function AppContent() {
               }}
             />
           )}
-          {currentView === 'orders' && (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-500">
-              <div className="text-5xl mb-4 opacity-20">🚧</div>
-              <p className="text-lg font-medium">Orders</p>
-              <p className="text-sm mt-2">Coming soon — Phase 4</p>
-            </div>
-          )}
+          {currentView === 'orders' && <OrdersPage />}
         </div>
       </main>
 

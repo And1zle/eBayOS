@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Message, MessageThread } from '@/types';
 import { cn } from '@/lib/utils';
-import { Star, Send, Sparkles, Loader2, MessageSquare } from 'lucide-react';
+import { Star, Send, Sparkles, Loader2, MessageSquare, Lightbulb } from 'lucide-react';
+import { generateReplySuggestions } from '../services/messageAnalyzer';
 
 interface MessageDetailProps {
   thread: MessageThread | null;
@@ -26,6 +27,10 @@ export function MessageDetail({
   confirmReply,
   onConfirmSend,
 }: MessageDetailProps) {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   if (!thread) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 gap-4 text-slate-500">
@@ -36,6 +41,32 @@ export function MessageDetail({
   }
 
   const { buyer_info, messages } = thread;
+  const lastMessage = messages[messages.length - 1];
+
+  // Generate AI suggestions when thread changes
+  useEffect(() => {
+    setSuggestions([]);
+    setShowSuggestions(false);
+  }, [thread?.messages[0]?.message_id]);
+
+  const handleGenerateSuggestions = async () => {
+    if (!lastMessage) return;
+    setLoadingSuggestions(true);
+    try {
+      const sugg = await generateReplySuggestions(lastMessage);
+      setSuggestions(sugg);
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error('Error generating suggestions:', err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleUseSuggestion = (suggestion: string) => {
+    onReplyDraftChange(suggestion);
+    setShowSuggestions(false);
+  };
 
   return (
     <div className="flex flex-col h-full gap-4">
@@ -116,7 +147,7 @@ export function MessageDetail({
 
       {/* Reply Composer */}
       {sendStatus !== 'confirming' && (
-        <div className="border-t border-white/10 pt-4">
+        <div className="border-t border-white/10 pt-4 space-y-3">
           <textarea
             value={replyDraft}
             onChange={e => onReplyDraftChange(e.target.value)}
@@ -124,14 +155,45 @@ export function MessageDetail({
             rows={3}
             className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-slate-600 resize-none focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
           />
-          <div className="flex items-center justify-between mt-2">
+
+          {/* AI Suggestions Panel */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="w-4 h-4 text-blue-400" />
+                <span className="text-xs font-semibold text-blue-400">AI Suggestions</span>
+              </div>
+              <div className="space-y-2">
+                {suggestions.map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleUseSuggestion(suggestion)}
+                    className="w-full text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/30 text-sm text-slate-300 hover:text-white transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
             <button
-              disabled
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-600 text-xs cursor-not-allowed"
-              title="Coming in Phase 2"
+              onClick={handleGenerateSuggestions}
+              disabled={loadingSuggestions}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                loadingSuggestions
+                  ? 'bg-white/5 text-slate-600 cursor-not-allowed'
+                  : 'bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300'
+              )}
             >
-              <Sparkles className="w-3 h-3" />
-              AI Suggest
+              {loadingSuggestions ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3" />
+              )}
+              {loadingSuggestions ? 'Generating...' : 'AI Suggest'}
             </button>
             <button
               onClick={() => replyDraft.trim() && onSendReply(replyDraft.trim())}
