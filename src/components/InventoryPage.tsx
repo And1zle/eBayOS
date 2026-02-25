@@ -15,14 +15,16 @@ interface ActiveListing {
 
 interface InventoryPageProps {
   onAddToCommand?: (text: string) => void;
+  onStartCrosslist?: (items: any[]) => void;
 }
 
-export function InventoryPage({ onAddToCommand }: InventoryPageProps) {
+export function InventoryPage({ onAddToCommand, onStartCrosslist }: InventoryPageProps) {
   const [listings, setListings] = useState<ActiveListing[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalEntries, setTotalEntries] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchListings = async () => {
     setLoading(true);
@@ -142,6 +144,28 @@ export function InventoryPage({ onAddToCommand }: InventoryPageProps) {
         </div>
       )}
 
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && onStartCrosslist && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 glass-panel rounded-xl px-6 py-4 border border-white/5 flex items-center gap-4 shadow-lg">
+          <span className="text-sm text-slate-300">{selectedIds.size} selected</span>
+          <button
+            onClick={() => {
+              const selected = listings.filter(item => selectedIds.has(item.itemId));
+              onStartCrosslist(selected);
+            }}
+            className="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Crosslist to Poshmark
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Listing Rows */}
       {loaded && listings.length > 0 && (
         <div className="space-y-3">
@@ -158,6 +182,18 @@ export function InventoryPage({ onAddToCommand }: InventoryPageProps) {
                   stale ? "border-red-500/20 bg-red-500/5" : weak ? "border-amber-500/20 bg-amber-500/5" : "border-white/5"
                 )}
               >
+                {/* Checkbox */}
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(item.itemId)}
+                  onChange={(e) => {
+                    const next = new Set(selectedIds);
+                    e.target.checked ? next.add(item.itemId) : next.delete(item.itemId);
+                    setSelectedIds(next);
+                  }}
+                  className="w-5 h-5 rounded border-white/20 bg-slate-900/50 cursor-pointer shrink-0 mt-1"
+                />
+
                 {/* Thumbnail */}
                 {item.imageUrl ? (
                   <img src={item.imageUrl} alt="" className="w-20 h-20 rounded-lg object-cover shrink-0 bg-white/5" />

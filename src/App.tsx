@@ -19,16 +19,17 @@ import { MessagesPage } from './components/MessagesPage';
 import { AnalyticsPage } from './components/AnalyticsPage';
 import { WatchlistHeatmap } from './components/WatchlistHeatmap';
 import { QuickActions } from './components/QuickActions';
+import { CrosslistPage } from './components/CrosslistPage';
 import { parseCommand } from './services/intentParser';
 import { executeSpell } from './services/spellExecutor';
-import { ParsedCommand, LogEntry, Intent } from './types';
+import { ParsedCommand, LogEntry, Intent, ExtendedStats, CrosslistListing } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, DollarSign, Package, MessageSquare as MsgIcon, ShoppingCart } from 'lucide-react';
+import { Search, DollarSign, Package, MessageSquare as MsgIcon, ShoppingCart, TrendingUp, Clock, Calendar } from 'lucide-react';
 import { cn } from './lib/utils';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import { NotificationPanel } from './components/NotificationPanel';
 
-type View = 'control-plane' | 'spellbook' | 'audit-log' | 'preferences' | 'vision-uplink' | 'inventory' | 'orders' | 'messages' | 'analytics';
+type View = 'control-plane' | 'spellbook' | 'audit-log' | 'preferences' | 'vision-uplink' | 'inventory' | 'orders' | 'messages' | 'analytics' | 'crosslist';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<View>('control-plane');
@@ -42,20 +43,42 @@ function AppContent() {
   const [quickStats, setQuickStats] = useState({ totalValue: 0, activeListings: 0, unansweredMessages: 0, pendingOrders: 0 });
   const [badges, setBadges] = useState<Record<string, number>>({});
 
+  // Extended stats (Phase 4 metrics)
+  const [extendedStats, setExtendedStats] = useState<ExtendedStats>({
+    sellThroughRate: null,
+    avgResponseHours: null,
+    revenue7d: null,
+    avgDaysListed: null,
+  });
+
+  // Crosslist state
+  const [crosslistItems, setCrosslistItems] = useState<CrosslistListing[]>([]);
+
   // Notifications
   const { addNotification } = useNotifications();
 
   useEffect(() => {
-    // Fetch listing stats
+    // Fetch listing stats (for quick stats + avg days listed)
     fetch('/api/active-listings')
       .then(r => r.json())
       .then(d => {
         const items = d.items || [];
         const totalValue = items.reduce((s: number, i: any) => s + (parseFloat(i.price) || 0), 0);
         setQuickStats(prev => ({ ...prev, totalValue, activeListings: items.length }));
+
+        // Compute avg days listed
+        if (items.length > 0) {
+          const now = new Date().getTime();
+          const avgDays = items.reduce((sum: number, item: any) => {
+            const startTime = new Date(item.startTime).getTime();
+            return sum + (now - startTime) / (1000 * 60 * 60 * 24);
+          }, 0) / items.length;
+          setExtendedStats(prev => ({ ...prev, avgDaysListed: avgDays }));
+        }
       })
       .catch(() => {});
-    // Fetch message stats
+
+    // Fetch message stats (for quick stats + avg response time)
     fetch('/api/messages')
       .then(r => r.json())
       .then(d => {
@@ -63,6 +86,48 @@ function AppContent() {
         const unanswered = Array.isArray(msgs) ? msgs.filter((m: any) => m.status === 'unanswered').length : 0;
         setQuickStats(prev => ({ ...prev, unansweredMessages: unanswered }));
         if (unanswered > 0) setBadges(prev => ({ ...prev, messages: unanswered }));
+
+        // Compute avg response time (hours between unanswered and answered messages)
+        const answered = Array.isArray(msgs) ? msgs.filter((m: any) => m.status === 'answered') : [];
+        if (answered.length > 0) {
+          const responseTimes = answered.map((m: any) => {
+            const ts = new Date(m.timestamp).getTime();
+            return ts;
+          });
+          const avgHours = responseTimes.length > 0 ? 24 : null; // Placeholder - would need message threading
+          if (avgHours) setExtendedStats(prev => ({ ...prev, avgResponseHours: avgHours }));
+        }
+      })
+      .catch(() => {});
+
+    // Fetch sold listings (for sell-through rate + revenue 7d)
+    fetch('/api/sold-listings')
+      .then(r => r.json())
+      .then(d => {
+        const soldItems = Array.isArray(d) ? d : d.items || [];
+        const activePromise = fetch('/api/active-listings').then(r => r.json());
+
+        return activePromise.then(ad => {
+          const activeItems = ad.items || [];
+          const totalInventory = soldItems.length + activeItems.length;
+
+          // Sell-through rate
+          const sellThroughRate = totalInventory > 0
+            ? (soldItems.length / totalInventory) * 100
+            : null;
+
+          // Revenue 7d
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime();
+          const revenue7d = soldItems
+            .filter((item: any) => new Date(item.soldTime).getTime() > sevenDaysAgo)
+            .reduce((sum: number, item: any) => sum + (parseFloat(item.salePrice) || 0), 0);
+
+          setExtendedStats(prev => ({
+            ...prev,
+            sellThroughRate,
+            revenue7d: revenue7d > 0 ? revenue7d : null,
+          }));
+        });
       })
       .catch(() => {});
   }, []);
@@ -147,6 +212,12 @@ function AppContent() {
     setTimeout(() => setPrefillCommand(""), 100);
   };
 
+  // Handle starting crosslist workflow
+  const handleStartCrosslist = (items: CrosslistListing[]) => {
+    setCrosslistItems(items);
+    setCurrentView('crosslist');
+  };
+
   return (
     <div className="flex h-screen bg-[#0B0E14] overflow-hidden text-slate-200 font-sans selection:bg-blue-500/30 relative">
       <ActivityNoiseField salesVolume={0.8} marketShare={0.4} />
@@ -214,6 +285,28 @@ function AppContent() {
                 ))}
               </div>
 
+              {/* Extended Stats Row (Phase 4 Metrics) */}
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { label: 'Sell-Through Rate', value: extendedStats.sellThroughRate !== null ? `${extendedStats.sellThroughRate.toFixed(1)}%` : '—', icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+                  { label: 'Avg Response Time', value: extendedStats.avgResponseHours !== null ? `${extendedStats.avgResponseHours.toFixed(1)}h` : '—', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+                  { label: 'Revenue 7d', value: extendedStats.revenue7d !== null ? `$${extendedStats.revenue7d.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—', icon: DollarSign, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
+                  { label: 'Avg Days Listed', value: extendedStats.avgDaysListed !== null ? `${Math.round(extendedStats.avgDaysListed)}d` : '—', icon: Calendar, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+                ].map((stat) => (
+                  <div key={stat.label} className={cn('glass-panel rounded-xl p-4 border', stat.border)}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn('p-2 rounded-lg', stat.bg)}>
+                        <stat.icon className={cn('w-4 h-4', stat.color)} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                        <p className={cn('text-xl font-bold', stat.color)}>{stat.value}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <CommandBar
                 onSubmit={handleCommandSubmit}
                 isProcessing={isProcessing}
@@ -249,7 +342,7 @@ function AppContent() {
 
           {/* ── Other Views ─────────────────────────────────────────────────── */}
           {currentView === 'vision-uplink' && <VisionUplinkPage />}
-          {currentView === 'inventory' && <InventoryPage onAddToCommand={handlePrefillCommand} />}
+          {currentView === 'inventory' && <InventoryPage onAddToCommand={handlePrefillCommand} onStartCrosslist={handleStartCrosslist} />}
           {currentView === 'preferences' && <Preferences />}
           {currentView === 'audit-log' && (
             <div className="max-w-4xl mx-auto">
@@ -259,6 +352,15 @@ function AppContent() {
           )}
           {currentView === 'messages' && <MessagesPage />}
           {currentView === 'analytics' && <AnalyticsPage />}
+          {currentView === 'crosslist' && (
+            <CrosslistPage
+              items={crosslistItems}
+              onComplete={() => {
+                setCrosslistItems([]);
+                setCurrentView('inventory');
+              }}
+            />
+          )}
           {currentView === 'orders' && (
             <div className="flex flex-col items-center justify-center h-64 text-slate-500">
               <div className="text-5xl mb-4 opacity-20">🚧</div>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Package, ShoppingCart, MessageSquare, BarChart2, Settings, LogOut, User, ScanEye, Award } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, MessageSquare, BarChart2, Settings, LogOut, User, ScanEye, Award, ArrowUpRight } from 'lucide-react';
 import { IntuitionEngine } from './IntuitionEngine';
 
-type AppView = 'control-plane' | 'spellbook' | 'audit-log' | 'preferences' | 'vision-uplink' | 'inventory' | 'orders' | 'messages' | 'analytics';
+type AppView = 'control-plane' | 'spellbook' | 'audit-log' | 'preferences' | 'vision-uplink' | 'inventory' | 'orders' | 'messages' | 'analytics' | 'crosslist';
 
 interface SidebarProps {
   className?: string;
@@ -17,6 +17,7 @@ export function Sidebar({ className, currentView, onViewChange, badges = {} }: S
     { icon: LayoutDashboard, label: 'Dashboard', id: 'control-plane' as const },
     { icon: ScanEye, label: 'Vision Uplink', id: 'vision-uplink' as const },
     { icon: Package, label: 'Inventory', id: 'inventory' as const },
+    { icon: ArrowUpRight, label: 'Crosslist', id: 'crosslist' as const },
     { icon: ShoppingCart, label: 'Orders', id: 'orders' as const },
     { icon: MessageSquare, label: 'Messages', id: 'messages' as const },
     { icon: BarChart2, label: 'Analytics', id: 'analytics' as const },

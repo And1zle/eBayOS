@@ -154,3 +154,32 @@ export interface Notification {
   timestamp: string;
   read: boolean;
 }
+
+// ─── Extended Stats (Dashboard Metrics) ──────────────────────────────────────
+
+export interface ExtendedStats {
+  sellThroughRate: number | null;  // 0-100%
+  avgResponseHours: number | null; // hours
+  revenue7d: number | null;        // USD
+  avgDaysListed: number | null;    // days
+}
+
+// ─── Crosslist / Poshmark ────────────────────────────────────────────────────
+
+export interface CrosslistListing {
+  itemId: string;
+  title: string;
+  price: number;
+  images: string[];           // URLs or base64
+  condition: Condition;
+  description?: string;
+  // Crosslist-specific override fields:
+  poshmarkPrice?: number;    // Override price
+  poshmarkSize?: string;     // Size/category
+  poshmarkBrand?: string;    // Brand override
+}
+
+export interface CrosslistBatchRequest {
+  items: CrosslistListing[];
+  extensionInstalled: boolean;
+}

@@ -23,6 +23,80 @@ async function startServer() {
   // Must be large enough for base64 images (~12MB image → ~16MB base64)
   app.use(express.json({ limit: "50mb" }));
 
+  // ── Phase 4 Stub Endpoints (for testing, integrate with backend later) ───────
+
+  // Upload image (Base64 → disk)
+  app.post("/api/upload-image", (req: any, res: any) => {
+    const { base64, filename } = req.body;
+    if (!base64 || !filename) {
+      return res.status(400).json({ error: "base64 and filename required" });
+    }
+
+    // For now, just return a mock URL (would save to disk in real implementation)
+    console.log(`[Upload] ${filename} (${base64.length} bytes)`);
+    res.json({
+      success: true,
+      url: `/images/${filename}`,
+      path: `/DATA/AppData/ebayos/images/${filename}`,
+    });
+  });
+
+  // Get sold listings (mock data for testing)
+  app.get("/api/sold-listings", (req: any, res: any) => {
+    const mockSoldItems = [
+      {
+        itemId: "154589",
+        title: "Vintage Bandai Dragon",
+        startTime: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+        soldTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        salePrice: 45.99,
+      },
+      {
+        itemId: "154590",
+        title: "Harley Davidson Collectible",
+        startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        soldTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        salePrice: 129.50,
+      },
+      {
+        itemId: "154591",
+        title: "Rare Comic Book",
+        startTime: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+        soldTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        salePrice: 299.00,
+      },
+      {
+        itemId: "154592",
+        title: "Vintage Board Game",
+        startTime: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+        soldTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+        salePrice: 65.00,
+      },
+    ];
+
+    console.log("[Mock] GET /api/sold-listings");
+    res.json(mockSoldItems);
+  });
+
+  // Crosslist to Poshmark (stub endpoint)
+  app.post("/api/crosslist/poshmark", (req: any, res: any) => {
+    const { items, extensionInstalled } = req.body;
+
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ error: "items array required" });
+    }
+
+    console.log(`[Crosslist] Posting ${items.length} items to Poshmark (stub)`);
+
+    // Return success for each item
+    const results = items.map((item: any) => ({
+      itemId: item.itemId,
+      success: true,
+    }));
+
+    res.json({ success: true, results });
+  });
+
   // ── Proxy all /api/* → Docker backend ─────────────────────────────────────
   app.use("/api", async (req: any, res: any) => {
     const targetUrl = BACKEND_URL + req.originalUrl;
