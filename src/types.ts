@@ -201,6 +201,19 @@ export interface ExtendedStats {
   avgDaysListed: number | null;    // days
 }
 
+// ─── Active Listings ─────────────────────────────────────────────────────────
+
+export interface ActiveListing {
+  itemId: string;
+  title: string;
+  price: number;
+  imageUrl?: string;
+  watchers?: number;
+  bids?: number;
+  condition?: Condition;
+  startTime?: string;
+}
+
 // ─── Crosslist / Poshmark ────────────────────────────────────────────────────
 
 export interface CrosslistListing {

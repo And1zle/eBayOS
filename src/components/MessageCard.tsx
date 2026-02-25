@@ -1,13 +1,22 @@
 import React from 'react';
-import { Message } from '@/types';
+import { Message, MessageIntent } from '@/types';
 import { cn } from '@/lib/utils';
-import { Star, AlertCircle } from 'lucide-react';
+import { Star, AlertCircle, DollarSign, Package, Gift, AlertTriangle, Smile } from 'lucide-react';
 
 interface MessageCardProps {
   message: Message;
   selected: boolean;
   onClick: () => void;
 }
+
+const intentConfig = {
+  [MessageIntent.PRICE_INQUIRY]: { icon: DollarSign, label: 'Price', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  [MessageIntent.SHIPPING_QUESTION]: { icon: Package, label: 'Shipping', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  [MessageIntent.BULK_OFFER]: { icon: Gift, label: 'Bulk', color: 'text-violet-400', bg: 'bg-violet-500/10' },
+  [MessageIntent.COMPLAINT]: { icon: AlertTriangle, label: 'Issue', color: 'text-red-400', bg: 'bg-red-500/10' },
+  [MessageIntent.PRAISE]: { icon: Smile, label: 'Praise', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+  [MessageIntent.OTHER]: { icon: AlertCircle, label: 'Other', color: 'text-slate-400', bg: 'bg-slate-500/10' },
+};
 
 const getDaysAgo = (ts: string) => Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
 
@@ -17,6 +26,8 @@ const isUrgent = (text: string) =>
 export function MessageCard({ message, selected, onClick }: MessageCardProps) {
   const days = getDaysAgo(message.timestamp);
   const urgent = isUrgent(message.message_text);
+  const intentCfg = message.intent ? intentConfig[message.intent] : null;
+  const Icon = intentCfg?.icon;
 
   return (
     <button
@@ -42,7 +53,13 @@ export function MessageCard({ message, selected, onClick }: MessageCardProps) {
               />
             ))}
           </div>
-          {urgent && <AlertCircle className="w-3.5 h-3.5 text-amber-400" />}
+          {intentCfg && Icon && (
+            <div className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded', intentCfg.bg)}>
+              <Icon className={cn('w-3 h-3', intentCfg.color)} />
+              <span className={cn('text-[9px] font-semibold', intentCfg.color)}>{intentCfg.label}</span>
+            </div>
+          )}
+          {urgent && !intentCfg && <AlertCircle className="w-3.5 h-3.5 text-amber-400" />}
         </div>
         <span className="text-[10px] font-mono text-slate-500">{days}d ago</span>
       </div>

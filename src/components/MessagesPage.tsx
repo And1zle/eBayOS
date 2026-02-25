@@ -5,6 +5,10 @@ import { MessageDetail } from './MessageDetail';
 import { useNotifications } from '../contexts/NotificationContext';
 import { generateReplySuggestions, detectMessageIntent } from '../services/messageAnalyzer';
 
+interface MessagesPageProps {
+  sellerPersonality?: string;
+}
+
 const MOCK_MESSAGES: Message[] = [
   {
     message_id: 'm1',
@@ -77,7 +81,7 @@ function buildThread(selected: Message, allMessages: Message[]): MessageThread {
   };
 }
 
-export function MessagesPage() {
+export function MessagesPage({ sellerPersonality }: MessagesPageProps) {
   const { addNotification } = useNotifications();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,18 +94,44 @@ export function MessagesPage() {
     ? buildThread(selectedMessage, messages)
     : null;
 
+  // Detect message intents on load and update
   useEffect(() => {
-    fetch('/api/messages')
-      .then(r => r.json())
-      .then((data: { messages?: Message[]; success?: boolean }) => {
-        if (data.success && Array.isArray(data.messages) && data.messages.length > 0) {
-          setMessages(data.messages);
-        } else {
-          setMessages(MOCK_MESSAGES);
-        }
-      })
-      .catch(() => setMessages(MOCK_MESSAGES))
-      .finally(() => setLoading(false));
+    const detectIntents = async (msgs: Message[]) => {
+      const updated = await Promise.all(
+        msgs.map(async (msg) => {
+          if (!msg.intent) {
+            try {
+              const intent = await detectMessageIntent(msg.message_text);
+              return { ...msg, intent };
+            } catch (err) {
+              console.error('Error detecting intent:', err);
+              return msg;
+            }
+          }
+          return msg;
+        })
+      );
+      setMessages(updated);
+    };
+
+    const loadMessages = async () => {
+      try {
+        const response = await fetch('/api/messages');
+        const data = await response.json();
+        const msgs = (data.success && Array.isArray(data.messages) && data.messages.length > 0)
+          ? data.messages
+          : MOCK_MESSAGES;
+
+        await detectIntents(msgs);
+      } catch (err) {
+        console.error('Error loading messages:', err);
+        await detectIntents(MOCK_MESSAGES);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMessages();
   }, []);
 
   const onSendReply = useCallback((message: string) => {
@@ -189,6 +219,7 @@ export function MessagesPage() {
             onCancelConfirm={onCancelConfirm}
             confirmReply={confirmReply}
             onConfirmSend={onConfirmSend}
+            sellerPersonality={sellerPersonality}
           />
         </div>
       </div>

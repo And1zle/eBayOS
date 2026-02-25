@@ -55,10 +55,23 @@ function AppContent() {
   // Crosslist state
   const [crosslistItems, setCrosslistItems] = useState<CrosslistListing[]>([]);
 
+  // Seller personality (Phase 5)
+  const [sellerPersonality, setSellerPersonality] = useState<string | undefined>(undefined);
+
   // Notifications
   const { addNotification } = useNotifications();
 
   useEffect(() => {
+    // Fetch seller personality from intuition engine
+    fetch('/api/status')
+      .then(r => r.json())
+      .then(d => {
+        if (d.intuition?.sellerVoice) {
+          setSellerPersonality(d.intuition.sellerVoice);
+        }
+      })
+      .catch(() => {});
+
     // Fetch listing stats (for quick stats + avg days listed)
     fetch('/api/active-listings')
       .then(r => r.json())
@@ -351,7 +364,7 @@ function AppContent() {
               <AuditLog logs={logs} />
             </div>
           )}
-          {currentView === 'messages' && <MessagesPage />}
+          {currentView === 'messages' && <MessagesPage sellerPersonality={sellerPersonality} />}
           {currentView === 'analytics' && <AnalyticsPage />}
           {currentView === 'crosslist' && (
             <CrosslistPage
