@@ -139,13 +139,13 @@ export function QuickActions({ onApply }: QuickActionsProps) {
       </div>
 
       {/* Action Grid */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {ACTIONS.map((action) => (
           <button
             key={action.label}
             onClick={() => onApply(action.command)}
             className={cn(
-              'group relative flex flex-col items-center gap-2 p-3 rounded-lg border transition-all duration-200',
+              'group relative flex items-start gap-3 p-3 rounded-lg border transition-all duration-200',
               'bg-white/[0.02] hover:bg-white/[0.06]',
               action.border,
               'hover:shadow-lg',
@@ -154,16 +154,16 @@ export function QuickActions({ onApply }: QuickActionsProps) {
             )}
           >
             {/* Icon */}
-            <div className={cn('p-2 rounded-lg', action.bg)}>
+            <div className={cn('p-2 rounded-lg shrink-0', action.bg)}>
               <action.icon className={cn('w-4 h-4', action.color)} />
             </div>
 
             {/* Text */}
-            <div className="text-center min-w-0">
-              <p className="text-xs font-semibold text-white group-hover:text-white transition-colors leading-tight">
+            <div className="text-left min-w-0">
+              <p className="text-sm font-semibold text-white group-hover:text-white transition-colors">
                 {action.label}
               </p>
-              <p className="text-[9px] text-slate-500 leading-tight mt-0.5 line-clamp-2">
+              <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5 line-clamp-2">
                 {action.description}
               </p>
             </div>
